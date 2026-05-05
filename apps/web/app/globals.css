@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Chocolate Truffle Palette */
+  --background: #FDFBD4;       /* Cream */
+  --foreground: #38240D;       /* Dark Truffle */
+  --primary: #713600;          /* Rich Brown */
+  --primary-foreground: #FDFBD4; /* Cream on Brown */
+  --accent: #C05800;           /* Burnt Orange */
+  --success: #10B981;          /* Green (Valid) */
+  --warning: #F59E0B;          /* Amber (Warning) */
+  --destructive: #EF4444;      /* Red (Invalid/Tampered) */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-sans);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Maintain Chocolate Truffle palette in dark mode for consistency */
+    --background: #1a1209;       /* Darker Truffle */
+    --foreground: #FDFBD4;       /* Cream text */
+    --primary: #A84D00;          /* Lighter Brown for contrast */
+    --primary-foreground: #FDFBD4;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
 }
+
+/* Apple HIG: Enforce minimum 44x44pt touch targets on mobile */
+@media (max-width: 768px) {
+  button, a[role="button"], [role="button"] {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0.875rem 1rem;
+  }
+
+  input, textarea, select {
+    min-height: 2.75rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Remove global link underlines unless hovering */
+a {
+  @apply no-underline;
+}
+
+a:hover {
+  @apply underline;
+}
+
