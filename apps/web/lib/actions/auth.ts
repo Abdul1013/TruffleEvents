@@ -88,7 +88,7 @@ export async function signUp(
       };
     }
 
-    // 2. Insert profile with default role 'attendee'
+    // 2. Insert profile with default role 'ATTENDEE'
     const { error: profileError } = await supabase
       .from("profiles")
       .insert([
@@ -96,7 +96,7 @@ export async function signUp(
           id: authData.user.id,
           email,
           full_name: fullName || email.split("@")[0],
-          user_role: "attendee",
+          role: "ATTENDEE",
         },
       ]);
 
