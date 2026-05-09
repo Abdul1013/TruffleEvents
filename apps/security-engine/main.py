@@ -9,9 +9,9 @@ from api.routes import security_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🔐 Security Engine started")
+    print(" Security Engine started")
     yield
-    print("🔐 Security Engine shutdown")
+    print("Security Engine shutdown")
 
 
 app = FastAPI(
