@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  * - Redirects to role-appropriate dashboard
  * - Protects routes that require authentication
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require auth
@@ -18,23 +18,21 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Check for auth session
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!session || sessionError) {
-      // No session, redirect to login
+    if (!user || userError) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Get user's role from profiles table
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("user_role")
-      .eq("id", session.user.id)
+      .select("role")
+      .eq("id", user.id)
       .single();
 
     if (profileError || !profile) {
@@ -42,7 +40,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const userRole = profile.user_role;
+    const userRole = profile.role.toLowerCase();
 
     // Role-based route protection and redirection
     const adminRoutes = ["/admin"];
