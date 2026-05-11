@@ -85,7 +85,7 @@ export default function CreateTicketTiersPage() {
       router.push("/organizer");
     } catch (err) {
       setError("An unexpected error occurred");
-      console.error(err);
+      console.error("[createTicketTiers] error:", (err as Error).message);
     } finally {
       setLoading(false);
     }
