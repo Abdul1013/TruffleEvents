@@ -97,7 +97,7 @@ export async function validateScannedQR(
     });
 
     if (insertError) {
-      console.error("[validateScannedQR] insert error:", insertError);
+      console.error("[validateScannedQR] insert error:", insertError?.message);
       return { outcome: "invalid", detail: "Failed to record scan. Try again." };
     }
 
@@ -116,7 +116,7 @@ export async function validateScannedQR(
     if (error instanceof z.ZodError) {
       return { outcome: "invalid", detail: "Malformed QR code" };
     }
-    console.error("[validateScannedQR]", error);
+    console.error("[validateScannedQR] error:", (error as Error).message);
     return { outcome: "invalid", detail: "Validation service unavailable" };
   }
 }
