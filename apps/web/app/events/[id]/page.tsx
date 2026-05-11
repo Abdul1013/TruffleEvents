@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getEventWithTiers } from "@/lib/actions/events";
 import { purchaseTicket } from "@/lib/actions/checkout";
 import { FeedbackToast } from "@/components/FeedbackToast";
+import { Calendar, MapPin, Lock, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function EventDetailPage() {
@@ -163,7 +164,7 @@ export default function EventDetailPage() {
             {/* Date & Venue */}
             <div className="space-y-2 bg-white border-2 border-[#C05800]/20 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">📅</span>
+                <Calendar size={20} className="text-accent mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[#38240D]/70">Date & Time</p>
                   <p className="font-medium text-[#38240D]">
@@ -176,7 +177,7 @@ export default function EventDetailPage() {
               </div>
 
               <div className="flex items-start gap-3 pt-2">
-                <span className="text-2xl">📍</span>
+                <MapPin size={20} className="text-accent mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[#38240D]/70">Venue</p>
                   <p className="font-medium text-[#38240D]">{event.venue_name}</p>
@@ -306,10 +307,10 @@ export default function EventDetailPage() {
             )}
 
             {/* Info Box */}
-            <div className="bg-[#FDFBD4] border border-[#C05800]/20 rounded p-3 text-xs text-[#713600]/70 space-y-1">
-              <p>✓ Secure AES-256-GCM encrypted</p>
-              <p>✓ 30-second dynamic QR codes</p>
-              <p>✓ No screenshot fraud</p>
+            <div className="bg-background border border-accent/20 rounded-lg p-3 text-xs text-foreground/60 space-y-1.5">
+              <p className="flex items-center gap-1.5"><CheckCircle size={12} className="text-success shrink-0" /> Secure AES-256-GCM encrypted</p>
+              <p className="flex items-center gap-1.5"><CheckCircle size={12} className="text-success shrink-0" /> 30-second dynamic QR codes</p>
+              <p className="flex items-center gap-1.5"><CheckCircle size={12} className="text-success shrink-0" /> No screenshot fraud possible</p>
             </div>
           </div>
         </div>

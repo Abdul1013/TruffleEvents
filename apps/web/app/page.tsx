@@ -1,182 +1,341 @@
-"use client";
+import Link from "next/link";
+import { Calendar, MapPin, Lock, Zap, WifiOff, ArrowRight, Shield, Users, Ticket } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import AppHeader from "@/components/AppHeader";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { FeedbackToast, useFeedback } from "@/components/FeedbackToast";
+interface TicketTier {
+  price: number;
+  capacity: number;
+  sold: number;
+}
 
-export default function Home() {
-  const feedback = useFeedback();
+interface Event {
+  id: string;
+  title: string;
+  banner_url: string | null;
+  venue_name: string | null;
+  starts_at: string;
+  ticket_tiers: TicketTier[];
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-NG", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getMinPrice(tiers: TicketTier[]): string {
+  if (!Array.isArray(tiers) || tiers.length === 0) return "Free";
+  const min = Math.min(...tiers.map((t) => Number(t.price)));
+  return min === 0 ? "Free" : `₦${min.toLocaleString()}`;
+}
+
+function isSoldOut(tiers: TicketTier[]): boolean {
+  if (!Array.isArray(tiers) || tiers.length === 0) return false;
+  return tiers.every((t) => t.sold >= t.capacity);
+}
+
+export default async function LandingPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let dashboardHref: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (profile) dashboardHref = `/${(profile.role as string).toLowerCase()}`;
+  }
+
+  const { data: rawEvents } = await supabase
+    .from("events")
+    .select(
+      "id, title, banner_url, venue_name, starts_at, ticket_tiers(price, capacity, sold)"
+    )
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(6);
+
+  const featuredEvents: Event[] = (rawEvents ?? []).map((e: any) => ({
+    ...e,
+    ticket_tiers: Array.isArray(e.ticket_tiers) ? e.ticket_tiers : [],
+  }));
+
+  const features = [
+    {
+      icon: Lock,
+      title: "AES-256-GCM Encryption",
+      description:
+        "Every ticket payload is encrypted with military-grade AES-256-GCM. Forgery is cryptographically impossible.",
+    },
+    {
+      icon: Zap,
+      title: "Dynamic QR Codes",
+      description:
+        "QR codes regenerate every 30 seconds with a timestamp TTL, eliminating screenshot fraud.",
+    },
+    {
+      icon: WifiOff,
+      title: "Offline Scanning",
+      description:
+        "Gatekeepers cache a validated hash list so scanning works even without internet.",
+    },
+    {
+      icon: Shield,
+      title: "Role-Based Access",
+      description:
+        "Separate dashboards for organisers, attendees, and gatekeepers with strict RBAC.",
+    },
+    {
+      icon: Users,
+      title: "Real-Time Analytics",
+      description:
+        "Organisers see live ticket sales, capacity usage, and scan activity in one view.",
+    },
+    {
+      icon: Ticket,
+      title: "Instant Issuance",
+      description:
+        "Tickets are issued and encrypted server-side the moment payment is confirmed.",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Header */}
-      <header className="border-b border-accent/20 py-4 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary">
-            EventTruffle
+      <AppHeader title="" />
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-20 md:py-32 flex flex-col items-center text-center gap-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold uppercase tracking-wide">
+            <Lock size={12} /> Encrypted Ticketing
+          </span>
+
+          <h1 className="text-4xl md:text-6xl font-extrabold text-foreground leading-tight max-w-3xl">
+            Discover events.{" "}
+            <span className="text-primary">Buy with confidence.</span>
           </h1>
-          <p className="text-foreground/70 mt-1">
-            Secure AES-256-GCM Ticketing & Management
+
+          <p className="text-lg text-foreground/60 max-w-xl">
+            EventTruffle protects every ticket with AES-256-GCM encryption and
+            dynamic QR codes that refresh every 30 seconds — so your entry is
+            always authentic.
           </p>
+
+          <div className="flex flex-wrap justify-center gap-3 mt-2">
+            {dashboardHref ? (
+              <Link
+                href={dashboardHref}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition min-h-[44px]"
+              >
+                Go to Dashboard <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition min-h-[44px]"
+                >
+                  Get Started <ArrowRight size={16} />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-accent/30 text-foreground font-semibold hover:bg-foreground/5 transition min-h-[44px]"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
+          </div>
         </div>
-      </header>
+      </section>
 
-      {/* Main Content */}
-      <main className="flex-1 py-8 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto space-y-12">
-          {/* Theme Showcase */}
-          <section>
-            <h2 className="text-2xl font-bold text-primary mb-6">
-              Design System: Chocolate Truffle Palette
+      {/* Featured Events */}
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 w-full">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              Upcoming Events
             </h2>
-
-            {/* Color Palette */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-background border-2 border-foreground/20" />
-                <p className="text-sm font-medium">Background (Cream)</p>
-                <p className="text-xs text-foreground/60">#FDFBD4</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-foreground" />
-                <p className="text-sm font-medium">Foreground (Dark Truffle)</p>
-                <p className="text-xs text-foreground/60">#38240D</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-primary" />
-                <p className="text-sm font-medium">Primary (Rich Brown)</p>
-                <p className="text-xs text-foreground/60">#713600</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-accent" />
-                <p className="text-sm font-medium">Accent (Burnt Orange)</p>
-                <p className="text-xs text-foreground/60">#C05800</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-success" />
-                <p className="text-sm font-medium">Success (Valid)</p>
-                <p className="text-xs text-foreground/60">#10B981</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-full h-24 rounded-lg bg-destructive" />
-                <p className="text-sm font-medium">Destructive (Invalid)</p>
-                <p className="text-xs text-foreground/60">#EF4444</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Components */}
-          <section>
-            <h2 className="text-2xl font-bold text-primary mb-6">
-              Interactive Components
-            </h2>
-
-            <div className="space-y-6">
-              {/* Buttons */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Button Variants
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="default">Default</Button>
-                  <Button variant="outline">Outline</Button>
-                  <Button variant="secondary">Secondary</Button>
-                  <Button variant="destructive">Destructive</Button>
-                  <Button variant="ghost">Ghost</Button>
-                  <Button variant="link">Link</Button>
-                </div>
-              </div>
-
-              {/* Feedback States */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Validation Feedback
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    onClick={() =>
-                      feedback.show(
-                        "valid",
-                        "Ticket scanned successfully! Ready for entry."
-                      )
-                    }
-                    className="bg-success hover:bg-success/90 text-white"
-                  >
-                    Show Valid
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      feedback.show(
-                        "warning",
-                        "This ticket has already been scanned."
-                      )
-                    }
-                    className="bg-warning hover:bg-warning/90 text-white"
-                  >
-                    Show Warning
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      feedback.show(
-                        "invalid",
-                        "QR code invalid or has been tampered with."
-                      )
-                    }
-                    className="bg-destructive hover:bg-destructive/90 text-white"
-                  >
-                    Show Invalid
-                  </Button>
-                </div>
-              </div>
-
-              {/* Typography */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Typography
-                </h3>
-                <div className="space-y-3">
-                  <p className="text-4xl font-bold">Heading 1</p>
-                  <p className="text-2xl font-semibold">Heading 2</p>
-                  <p className="text-lg font-medium">Body Text (Medium)</p>
-                  <p className="text-base">Body Text (Regular)</p>
-                  <p className="text-sm text-foreground/70">Small Text</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Apple HIG Features */}
-          <section className="bg-accent/5 border-l-4 border-accent p-6 rounded-lg">
-            <h2 className="text-2xl font-bold text-primary mb-4">
-              Apple Human Interface Guidelines
-            </h2>
-            <ul className="space-y-2 text-foreground/80">
-              <li>✓ Minimum 44x44pt touch targets on mobile for accessibility</li>
-              <li>✓ Inter font family for clarity and readability</li>
-              <li>✓ Haptic feedback on validation state changes</li>
-              <li>✓ Color-coded feedback (Green/Amber/Red)</li>
-              <li>✓ Subtle animations and transitions</li>
-              <li>✓ High contrast between foreground and background</li>
-            </ul>
-          </section>
+            <p className="text-foreground/60 mt-1 text-sm">
+              Discover what&apos;s happening near you
+            </p>
+          </div>
+          <Link
+            href="/events"
+            className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          >
+            View all <ArrowRight size={14} />
+          </Link>
         </div>
-      </main>
 
-      {/* Feedback Toast */}
-      <FeedbackToast
-        state={feedback.state}
-        message={feedback.message}
-        onDismiss={feedback.clear}
-      />
+        {featuredEvents.length === 0 ? (
+          <div className="text-center py-16 rounded-2xl border border-accent/20">
+            <Ticket size={40} className="mx-auto text-foreground/25 mb-3" />
+            <p className="text-foreground/60 text-sm">
+              No upcoming events yet — check back soon.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredEvents.map((event) => {
+              const soldOut = isSoldOut(event.ticket_tiers);
+              const minPrice = getMinPrice(event.ticket_tiers);
+
+              return (
+                <Link
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  className="group block rounded-2xl border border-accent/20 overflow-hidden hover:border-accent/50 hover:shadow-lg transition bg-background"
+                >
+                  <div className="relative h-44 bg-foreground/5 overflow-hidden">
+                    {event.banner_url ? (
+                      <img
+                        src={event.banner_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Ticket size={36} className="text-foreground/20" />
+                      </div>
+                    )}
+                    {soldOut && (
+                      <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-foreground/80 text-background text-xs font-semibold">
+                        Sold Out
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition">
+                      {event.title}
+                    </h3>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs text-foreground/60">
+                        <Calendar size={13} className="text-accent shrink-0" />
+                        {formatDate(event.starts_at)}
+                      </div>
+                      {event.venue_name && (
+                        <div className="flex items-center gap-2 text-xs text-foreground/60">
+                          <MapPin size={13} className="text-accent shrink-0" />
+                          <span className="truncate">{event.venue_name}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-1 flex items-center justify-between">
+                      <span className="text-sm font-bold text-primary">
+                        {minPrice}
+                      </span>
+                      <span className="text-xs text-foreground/40">
+                        {event.ticket_tiers.length} tier
+                        {event.ticket_tiers.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-6 sm:hidden text-center">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          >
+            View all events <ArrowRight size={14} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-y border-accent/20 py-16">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              Why EventTruffle?
+            </h2>
+            <p className="text-foreground/60 mt-2 max-w-xl mx-auto text-sm">
+              Built for organisers who can&apos;t afford fraud and attendees who
+              demand a seamless experience.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="p-6 rounded-2xl bg-background border border-accent/20 hover:border-accent/40 transition"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Icon size={20} className="text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-2">{title}</h3>
+                <p className="text-sm text-foreground/60 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-20 text-center w-full">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+          Ready to host or attend your next event?
+        </h2>
+        <p className="text-foreground/60 mb-8 max-w-md mx-auto text-sm">
+          Join EventTruffle — organisers, attendees, and gatekeepers all in one
+          secure platform.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          {dashboardHref ? (
+            <Link
+              href={dashboardHref}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition min-h-[44px]"
+            >
+              Open Dashboard <ArrowRight size={16} />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition min-h-[44px]"
+              >
+                Create Account <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-accent/30 text-foreground font-semibold hover:bg-foreground/5 transition min-h-[44px]"
+              >
+                Browse Events
+              </Link>
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-accent/20 py-6 px-4 md:px-8 text-center text-sm text-foreground/60">
-        <p>EventTruffle Sprint 1 — Infrastructure & Design System</p>
+      <footer className="mt-auto border-t border-accent/20 py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm font-bold text-primary">EventTruffle</p>
+          <p className="text-xs text-foreground/40">
+            AES-256-GCM encrypted ticketing. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   );

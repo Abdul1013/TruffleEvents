@@ -5,6 +5,7 @@ import { getAllEvents, searchEvents } from "@/lib/actions/events";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar, MapPin } from "lucide-react";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -144,8 +145,8 @@ export default function EventsPage() {
 
                       {/* Date & Venue */}
                       <div className="text-xs text-foreground/70 space-y-1 mb-3 flex-1">
-                        <p>📅 {startDate.toLocaleDateString()}</p>
-                        <p>📍 {event.venue_name}</p>
+                        <p className="flex items-center gap-1.5"><Calendar size={12} className="text-accent shrink-0" />{startDate.toLocaleDateString()}</p>
+                        <p className="flex items-center gap-1.5"><MapPin size={12} className="text-accent shrink-0" />{event.venue_name}</p>
                       </div>
 
                       {/* Price Range */}
