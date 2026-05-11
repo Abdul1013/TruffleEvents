@@ -44,11 +44,11 @@ export async function createEvent(
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("user_role")
+      .select("role")
       .eq("id", session.user.id)
       .single();
 
-    if (profileError || profile?.user_role !== "organizer") {
+    if (profileError || !["ORGANIZER", "ADMIN"].includes(profile?.role ?? "")) {
       return { success: false, error: "Only organizers can create events" };
     }
 
@@ -251,6 +251,66 @@ export async function getAllEvents(page: number = 1, pageSize: number = 10) {
   } catch (error) {
     console.error("[getAllEvents]", error);
     return { success: false, error: "Failed to fetch events" };
+  }
+}
+
+export interface OrganizerEventSummary {
+  id: string;
+  title: string;
+  venue_name: string;
+  starts_at: string;
+  ends_at: string;
+  banner_url: string | null;
+  tier_count: number;
+  total_capacity: number;
+  total_sold: number;
+}
+
+/**
+ * Returns the authenticated organizer's own events with tier summary.
+ */
+export async function getOrganizerEvents(): Promise<
+  { success: true; events: OrganizerEventSummary[] } | { success: false; error: string }
+> {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("events")
+      .select(
+        `id, title, venue_name, starts_at, ends_at, banner_url,
+         ticket_tiers ( capacity, sold )`
+      )
+      .eq("organizer_id", session.user.id)
+      .order("starts_at", { ascending: false });
+
+    if (error) {
+      console.error("[getOrganizerEvents]", error);
+      return { success: false, error: "Failed to load events" };
+    }
+
+    const events: OrganizerEventSummary[] = (data || []).map((e: any) => {
+      const tiers: any[] = Array.isArray(e.ticket_tiers) ? e.ticket_tiers : [];
+      return {
+        id: e.id,
+        title: e.title,
+        venue_name: e.venue_name,
+        starts_at: e.starts_at,
+        ends_at: e.ends_at,
+        banner_url: e.banner_url,
+        tier_count: tiers.length,
+        total_capacity: tiers.reduce((s, t) => s + t.capacity, 0),
+        total_sold: tiers.reduce((s, t) => s + t.sold, 0),
+      };
+    });
+
+    return { success: true, events };
+  } catch (err) {
+    console.error("[getOrganizerEvents]", err);
+    return { success: false, error: "Failed to load events" };
   }
 }
 

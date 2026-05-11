@@ -192,6 +192,166 @@ export async function getOrganizerAnalytics(): Promise<
   }
 }
 
+// ─── Admin user management ───────────────────────────────────────────────────
+
+export interface AdminEventRow {
+  id: string;
+  title: string;
+  venue_name: string;
+  starts_at: string;
+  ends_at: string;
+  organizer_name: string;
+  total_capacity: number;
+  total_sold: number;
+  tier_count: number;
+}
+
+const VALID_ROLES = ["ADMIN", "ORGANIZER", "ATTENDEE", "GATEKEEPER"] as const;
+type ValidRole = (typeof VALID_ROLES)[number];
+
+/**
+ * Returns all profiles for admin user management.
+ * Requires ADMIN role.
+ */
+export async function getAdminUsers(): Promise<
+  { success: true; users: UserRow[] } | { success: false; error: string }
+> {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+    const supabase = await createClient();
+    const { data: self } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+    if (!self || self.role !== "ADMIN") return { success: false, error: "Admin access required" };
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, role, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) return { success: false, error: "Failed to load users" };
+
+    return {
+      success: true,
+      users: (data || []).map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.full_name,
+        role: u.role,
+        created_at: u.created_at,
+      })),
+    };
+  } catch (err) {
+    console.error("[getAdminUsers]", err);
+    return { success: false, error: "Failed to load users" };
+  }
+}
+
+/**
+ * Updates a user's role. Admin only. Prevents self-role change.
+ */
+export async function updateUserRole(
+  targetUserId: string,
+  newRole: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!VALID_ROLES.includes(newRole as ValidRole)) {
+      return { success: false, error: "Invalid role" };
+    }
+
+    const session = await getSession();
+    if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+    if (session.user.id === targetUserId) {
+      return { success: false, error: "Cannot change your own role" };
+    }
+
+    const supabase = await createClient();
+    const { data: self } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+    if (!self || self.role !== "ADMIN") return { success: false, error: "Admin access required" };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role: newRole })
+      .eq("id", targetUserId);
+
+    if (error) {
+      console.error("[updateUserRole]", error);
+      return { success: false, error: "Failed to update role" };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("[updateUserRole]", err);
+    return { success: false, error: "Failed to update role" };
+  }
+}
+
+/**
+ * Returns all events with organizer and tier summary for admin view.
+ * Requires ADMIN role.
+ */
+export async function getAdminAllEvents(): Promise<
+  { success: true; events: AdminEventRow[] } | { success: false; error: string }
+> {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+    const supabase = await createClient();
+    const { data: self } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+    if (!self || self.role !== "ADMIN") return { success: false, error: "Admin access required" };
+
+    const { data, error } = await supabase
+      .from("events")
+      .select(
+        `id, title, venue_name, starts_at, ends_at,
+         profiles!events_organizer_id_fkey ( full_name ),
+         ticket_tiers ( capacity, sold )`
+      )
+      .order("starts_at", { ascending: false });
+
+    if (error) {
+      console.error("[getAdminAllEvents]", error);
+      return { success: false, error: "Failed to load events" };
+    }
+
+    const events: AdminEventRow[] = (data || []).map((e: any) => {
+      const tiers: any[] = Array.isArray(e.ticket_tiers) ? e.ticket_tiers : [];
+      const organizerName = Array.isArray(e.profiles)
+        ? e.profiles[0]?.full_name ?? "Unknown"
+        : (e.profiles?.full_name ?? "Unknown");
+      return {
+        id: e.id,
+        title: e.title,
+        venue_name: e.venue_name,
+        starts_at: e.starts_at,
+        ends_at: e.ends_at,
+        organizer_name: organizerName,
+        total_capacity: tiers.reduce((s, t) => s + t.capacity, 0),
+        total_sold: tiers.reduce((s, t) => s + t.sold, 0),
+        tier_count: tiers.length,
+      };
+    });
+
+    return { success: true, events };
+  } catch (err) {
+    console.error("[getAdminAllEvents]", err);
+    return { success: false, error: "Failed to load events" };
+  }
+}
+
 // ─── Admin logs ───────────────────────────────────────────────────────────────
 
 /**

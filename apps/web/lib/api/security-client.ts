@@ -36,7 +36,9 @@ export interface SecurityError {
   message: string;
 }
 
-const SECURITY_ENGINE_URL = process.env.NEXT_PUBLIC_SECURITY_ENGINE_URL || "http://localhost:8000";
+// Server-side only — never imported by client components, so no NEXT_PUBLIC_ needed.
+// Set SECURITY_ENGINE_URL in .env.local; the engine URL stays out of the browser bundle.
+const SECURITY_ENGINE_URL = process.env.SECURITY_ENGINE_URL ?? process.env.NEXT_PUBLIC_SECURITY_ENGINE_URL ?? "http://localhost:8000";
 const API_BASE = `${SECURITY_ENGINE_URL}/security/api/v1`;
 
 /**
