@@ -14,7 +14,7 @@ import json
 import hmac
 import hashlib
 from typing import TypedDict
-from datetime import datetime
+from datetime import datetime, timezone
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
@@ -76,7 +76,7 @@ class CryptoService:
             QRPayload dict with ticket_id, user_hash, and timestamp_ms
         """
         if timestamp_ms is None:
-            timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+            timestamp_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
 
         # Truncated HMAC-SHA256 of user_id (first 16 chars for brevity)
         user_hash = hmac.new(
@@ -175,7 +175,7 @@ class CryptoService:
         Returns:
             True if timestamp is valid, False otherwise
         """
-        current_ms = int(datetime.utcnow().timestamp() * 1000)
+        current_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
         age_ms = current_ms - timestamp_ms
         ttl_ms = ttl_seconds * 1000
 

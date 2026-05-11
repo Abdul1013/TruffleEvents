@@ -14,40 +14,52 @@ def test_encrypt_endpoint():
         ticket_id="test-ticket-123",
         user_id="test-user-456"
     )
-    
+
     response = client.post(
         "/security/api/v1/encrypt",
         json=payload.model_dump()
     )
-    
+
     print(f"Encrypt Status: {response.status_code}")
     print(f"Encrypt Response: {response.json()}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert data["encrypted_qr"] is not None
     assert data["timestamp_ms"] is not None
-    
-    return data["encrypted_qr"]
 
 
-def test_validate_endpoint(encrypted_qr):
+def _get_encrypted_qr() -> str:
+    """Helper — encrypt a ticket and return the QR string."""
+    client = TestClient(app)
+    response = client.post(
+        "/security/api/v1/encrypt",
+        json=EncryptRequest(ticket_id="test-ticket-123", user_id="test-user-456").model_dump(),
+    )
+    return response.json()["encrypted_qr"]
+
+
+def test_validate_endpoint():
     """Test the /validate endpoint."""
     client = TestClient(app)
-    payload = ValidateRequest(
-        encrypted_qr=encrypted_qr,
-        ttl_seconds=30
+
+    enc_resp = client.post(
+        "/security/api/v1/encrypt",
+        json=EncryptRequest(ticket_id="test-ticket-123", user_id="test-user-456").model_dump(),
     )
-    
+    assert enc_resp.status_code == 200
+    encrypted_qr = enc_resp.json()["encrypted_qr"]
+
+    payload = ValidateRequest(encrypted_qr=encrypted_qr, ttl_seconds=30)
     response = client.post(
         "/security/api/v1/validate",
         json=payload.model_dump()
     )
-    
+
     print(f"Validate Status: {response.status_code}")
     print(f"Validate Response: {response.json()}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["valid"] is True
@@ -85,7 +97,8 @@ def main():
     
     # Test encryption
     print("1️⃣ Testing /encrypt endpoint...")
-    encrypted_qr = test_encrypt_endpoint()
+    test_encrypt_endpoint()
+    encrypted_qr = _get_encrypted_qr()
     print("✅ /encrypt endpoint works\n")
     
     # Test validation with valid QR

@@ -1,9 +1,12 @@
 import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
 
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 from api.routes import security_router
 
 
