@@ -143,7 +143,7 @@ export default function CreateTicketTiersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1">Price ($)</label>
+                  <label className="block text-xs font-medium mb-1">Price (₦)</label>
                   <Input
                     type="number"
                     placeholder="0.00"

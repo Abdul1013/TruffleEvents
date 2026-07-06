@@ -341,7 +341,7 @@ export default function OrganizerAnalyticsPage() {
                       </span>
                     </td>
                     <td className="py-3 text-right font-semibold text-[#713600]">
-                      ${fmt(e.revenue)}
+                      ₦{fmt(e.revenue)}
                     </td>
                   </tr>
                 ))}
