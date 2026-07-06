@@ -1,4 +1,24 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getAdminOverview, type AdminOverview } from "@/lib/actions/dashboard";
+
 export default function AdminPage() {
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAdminOverview().then((res) => {
+      if (res.success) setOverview(res.data);
+      else setError(res.error);
+      setLoading(false);
+    });
+  }, []);
+
+  const statValue = (value: number | undefined) =>
+    loading ? "…" : error ? "—" : (value ?? 0).toLocaleString();
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -9,30 +29,36 @@ export default function AdminPage() {
         </p>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-accent/5 border border-accent/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Total Users</p>
-          <p className="text-3xl font-bold text-primary">—</p>
-          <p className="text-xs text-foreground/50 mt-2">Coming soon</p>
+          <p className="text-3xl font-bold text-primary">{statValue(overview?.totalUsers)}</p>
+          <p className="text-xs text-foreground/50 mt-2">Registered accounts</p>
         </div>
 
         <div className="bg-success/5 border border-success/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Total Events</p>
-          <p className="text-3xl font-bold text-success">—</p>
-          <p className="text-xs text-foreground/50 mt-2">Coming soon</p>
+          <p className="text-3xl font-bold text-success">{statValue(overview?.totalEvents)}</p>
+          <p className="text-xs text-foreground/50 mt-2">Across all organizers</p>
         </div>
 
         <div className="bg-accent/5 border border-accent/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Tickets Issued</p>
-          <p className="text-3xl font-bold text-primary">—</p>
-          <p className="text-xs text-foreground/50 mt-2">Coming soon</p>
+          <p className="text-3xl font-bold text-primary">{statValue(overview?.ticketsIssued)}</p>
+          <p className="text-xs text-foreground/50 mt-2">All time</p>
         </div>
 
         <div className="bg-accent/5 border border-accent/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Scans Today</p>
-          <p className="text-3xl font-bold text-primary">—</p>
-          <p className="text-xs text-foreground/50 mt-2">Coming soon</p>
+          <p className="text-3xl font-bold text-primary">{statValue(overview?.scansToday)}</p>
+          <p className="text-xs text-foreground/50 mt-2">QR validations</p>
         </div>
       </div>
 
