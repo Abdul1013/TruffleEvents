@@ -1,7 +1,24 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getGatekeeperStats, type GatekeeperStats } from "@/lib/actions/dashboard";
 
 export default function GatekeeperPage() {
+  const [stats, setStats] = useState<GatekeeperStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getGatekeeperStats().then((res) => {
+      if (res.success) setStats(res.data);
+      setLoading(false);
+    });
+  }, []);
+
+  const show = (value: number | undefined) =>
+    loading ? "…" : (value ?? 0).toLocaleString();
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -16,19 +33,19 @@ export default function GatekeeperPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-success/5 border border-success/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Scans Today</p>
-          <p className="text-3xl font-bold text-success">0</p>
+          <p className="text-3xl font-bold text-success">{show(stats?.validToday)}</p>
           <p className="text-xs text-foreground/50 mt-2">Valid entries</p>
         </div>
 
         <div className="bg-warning/5 border border-warning/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Duplicates</p>
-          <p className="text-3xl font-bold text-warning">0</p>
+          <p className="text-3xl font-bold text-warning">{show(stats?.duplicatesToday)}</p>
           <p className="text-xs text-foreground/50 mt-2">Already scanned</p>
         </div>
 
         <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6">
           <p className="text-sm text-foreground/60 mb-2">Rejections</p>
-          <p className="text-3xl font-bold text-destructive">0</p>
+          <p className="text-3xl font-bold text-destructive">{show(stats?.rejectionsToday)}</p>
           <p className="text-xs text-foreground/50 mt-2">Invalid/tampered</p>
         </div>
       </div>
