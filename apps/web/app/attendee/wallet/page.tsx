@@ -173,7 +173,7 @@ export default function WalletPage() {
                     <span className={`text-xs font-semibold px-2 py-1 rounded ${getStatusBadgeColor(ticket.status)}`}>
                       {ticket.status}
                     </span>
-                    <span className="text-sm font-bold text-[#713600]">${ticket.tier.price}</span>
+                    <span className="text-sm font-bold text-[#713600]">₦{ticket.tier.price.toLocaleString()}</span>
                   </div>
 
                   {/* CTA */}

@@ -214,7 +214,7 @@ export default function TicketDetailPage() {
                   <div className="text-right">
                     <p className="text-sm text-[#C05800]">PRICE</p>
                     <p className="text-2xl font-bold text-[#713600]">
-                      ${ticket.tier.price}
+                      ₦{ticket.tier.price.toLocaleString()}
                     </p>
                   </div>
                 </div>
