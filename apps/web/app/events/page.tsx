@@ -152,7 +152,7 @@ export default function EventsPage() {
                       {/* Price Range */}
                       {availableTiers.length > 0 && (
                         <div className="text-sm font-medium text-primary">
-                          From ${Math.min(...availableTiers.map((t: any) => t.price)).toFixed(2)}
+                          From ₦{Math.min(...availableTiers.map((t: any) => t.price)).toLocaleString()}
                         </div>
                       )}
                     </div>

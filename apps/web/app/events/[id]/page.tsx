@@ -234,7 +234,7 @@ export default function EventDetailPage() {
                                 {isSoldOut ? "Sold Out" : `${remaining} left`}
                               </p>
                             </div>
-                            <p className="font-semibold text-[#713600]">${tier.price.toFixed(2)}</p>
+                            <p className="font-semibold text-[#713600]">₦{tier.price.toLocaleString()}</p>
                           </div>
                         </button>
                       );
@@ -334,7 +334,7 @@ export default function EventDetailPage() {
                   {tiers.map((tier: any) => (
                     <tr key={tier.id} className="hover:bg-[#FDFBD4]/60">
                       <td className="py-2.5 pr-4 font-medium text-[#38240D]">{tier.name}</td>
-                      <td className="py-2.5 pr-4 text-[#713600]">${tier.price.toFixed(2)}</td>
+                      <td className="py-2.5 pr-4 text-[#713600]">₦{tier.price.toLocaleString()}</td>
                       <td className="py-2.5 pr-4 text-[#38240D]/70">{tier.capacity}</td>
                       <td className="py-2.5 pr-4 text-[#38240D]/70">{tier.sold}</td>
                       <td className={`py-2.5 font-semibold ${tier.capacity - tier.sold <= 0 ? "text-[#EF4444]" : "text-[#10B981]"}`}>
